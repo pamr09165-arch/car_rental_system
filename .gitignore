@@ -1,0 +1,17 @@
+# Upload Files
+uploads/
+
+# VS Code
+.vscode/
+
+# Log Files
+*.log
+
+# Environment
+.env
+
+# Windows
+Thumbs.db
+
+# macOS
+.DS_Store
