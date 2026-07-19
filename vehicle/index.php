@@ -24,7 +24,7 @@ include("../includes/navbar.php");
             </a>
         </div>
 
-        <!-- เพิ่มข้อมูลสำเร็จ -->
+        <!-- เพิ่มข้อมูล -->
         <?php if (isset($_GET["success"])) { ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle-fill"></i>
@@ -33,7 +33,7 @@ include("../includes/navbar.php");
             </div>
         <?php } ?>
 
-        <!-- แก้ไขข้อมูลสำเร็จ -->
+        <!-- แก้ไขข้อมูล -->
         <?php if (isset($_GET["update"])) { ?>
             <div class="alert alert-primary alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle-fill"></i>
@@ -42,7 +42,7 @@ include("../includes/navbar.php");
             </div>
         <?php } ?>
 
-        <!-- ลบข้อมูลสำเร็จ -->
+        <!-- ลบข้อมูล -->
         <?php if (isset($_GET["delete"])) { ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle-fill"></i>
@@ -54,27 +54,22 @@ include("../includes/navbar.php");
         <hr>
 
         <?php
-
         $sql = "SELECT * FROM vehicles ORDER BY created_at DESC";
         $result = mysqli_query($conn, $sql);
-
         ?>
 
         <table id="vehicleTable" class="table table-bordered table-hover align-middle">
 
             <thead class="table-dark">
-
                 <tr>
-
+                    <th width="110">รูป</th>
                     <th>Brand</th>
                     <th>Model</th>
                     <th>Plate</th>
                     <th class="text-end">Price / Day</th>
                     <th>Status</th>
                     <th width="150" class="text-center">Action</th>
-
                 </tr>
-
             </thead>
 
             <tbody>
@@ -85,21 +80,49 @@ include("../includes/navbar.php");
 
                         <tr>
 
-                            <td><?= htmlspecialchars($row['brand']) ?></td>
+                            <!-- รูป -->
+                            <td class="text-center">
 
-                            <td><?= htmlspecialchars($row['model']) ?></td>
+                                <?php
 
-                            <td><?= htmlspecialchars($row['plate_no']) ?></td>
+                                $image = "../assets/images/no-image.png";
 
-                            <td class="text-end">
-                                <?= number_format($row['price_per_day'], 2) ?>
+                                if (
+                                    !empty($row["image"]) &&
+                                    file_exists("../uploads/vehicles/" . $row["image"])
+                                ) {
+                                    $image = "../uploads/vehicles/" . $row["image"];
+                                }
+
+                                ?>
+
+                                <img
+                                    src="<?= $image ?>"
+                                    class="rounded border"
+                                    style="width:90px;height:60px;object-fit:cover;">
+
                             </td>
 
+                            <!-- Brand -->
+                            <td><?= htmlspecialchars($row["brand"]) ?></td>
+
+                            <!-- Model -->
+                            <td><?= htmlspecialchars($row["model"]) ?></td>
+
+                            <!-- Plate -->
+                            <td><?= htmlspecialchars($row["plate_no"]) ?></td>
+
+                            <!-- Price -->
+                            <td class="text-end">
+                                <?= number_format($row["price_per_day"], 2) ?>
+                            </td>
+
+                            <!-- Status -->
                             <td>
 
                                 <?php
 
-                                switch ($row['status']) {
+                                switch ($row["status"]) {
 
                                     case "available":
                                         echo '<span class="badge bg-success">Available</span>';
@@ -114,7 +137,9 @@ include("../includes/navbar.php");
                                         break;
 
                                     default:
-                                        echo '<span class="badge bg-secondary">' . htmlspecialchars($row['status']) . '</span>';
+                                        echo '<span class="badge bg-secondary">' .
+                                            htmlspecialchars($row["status"]) .
+                                            '</span>';
                                         break;
                                 }
 
@@ -122,20 +147,23 @@ include("../includes/navbar.php");
 
                             </td>
 
+                            <!-- Action -->
                             <td class="text-center">
 
-                                <a href="edit.php?id=<?= $row['id'] ?>"
-                                   class="btn btn-warning btn-sm"
-                                   title="แก้ไข">
+                                <a
+                                    href="edit.php?id=<?= $row['id'] ?>"
+                                    class="btn btn-warning btn-sm"
+                                    title="แก้ไข">
 
                                     <i class="bi bi-pencil-square"></i>
 
                                 </a>
 
-                                <a href="#"
-                                   class="btn btn-danger btn-sm deleteBtn"
-                                   data-id="<?= $row['id'] ?>"
-                                   title="ลบ">
+                                <a
+                                    href="#"
+                                    class="btn btn-danger btn-sm deleteBtn"
+                                    data-id="<?= $row['id'] ?>"
+                                    title="ลบ">
 
                                     <i class="bi bi-trash"></i>
 
@@ -151,7 +179,7 @@ include("../includes/navbar.php");
 
                     <tr>
 
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
 
                             <i class="bi bi-car-front"></i>
 
@@ -175,29 +203,29 @@ include("../includes/navbar.php");
 
 <script>
 
-$(document).ready(function(){
+$(document).ready(function () {
 
     $('#vehicleTable').DataTable({
 
-        pageLength:10,
+        pageLength: 10,
 
-        order:[[0,"asc"]],
+        order: [[1, "asc"]],
 
-        language:{
+        language: {
 
-            search:"🔍 ค้นหา :",
+            search: "🔍 ค้นหา :",
 
-            lengthMenu:"แสดง _MENU_ รายการ",
+            lengthMenu: "แสดง _MENU_ รายการ",
 
-            info:"แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
 
-            infoEmpty:"ไม่มีข้อมูล",
+            infoEmpty: "ไม่มีข้อมูล",
 
-            zeroRecords:"ไม่พบข้อมูล",
+            zeroRecords: "ไม่พบข้อมูล",
 
-            paginate:{
-                previous:"ก่อนหน้า",
-                next:"ถัดไป"
+            paginate: {
+                previous: "ก่อนหน้า",
+                next: "ถัดไป"
             }
 
         }
@@ -206,9 +234,9 @@ $(document).ready(function(){
 
 });
 
-// SweetAlert Delete
+// Delete
 
-$('.deleteBtn').click(function(e){
+$('.deleteBtn').click(function (e) {
 
     e.preventDefault();
 
@@ -216,25 +244,25 @@ $('.deleteBtn').click(function(e){
 
     Swal.fire({
 
-        title:'ลบข้อมูลรถ',
+        title: 'ลบข้อมูลรถ',
 
-        text:'คุณต้องการลบรถคันนี้ใช่หรือไม่',
+        text: 'คุณต้องการลบรถคันนี้ใช่หรือไม่',
 
-        icon:'warning',
+        icon: 'warning',
 
-        showCancelButton:true,
+        showCancelButton: true,
 
-        confirmButtonColor:'#dc3545',
+        confirmButtonColor: '#dc3545',
 
-        confirmButtonText:'ลบ',
+        confirmButtonText: 'ลบ',
 
-        cancelButtonText:'ยกเลิก'
+        cancelButtonText: 'ยกเลิก'
 
-    }).then((result)=>{
+    }).then((result) => {
 
-        if(result.isConfirmed){
+        if (result.isConfirmed) {
 
-            window.location='delete.php?id='+id;
+            window.location = "delete.php?id=" + id;
 
         }
 

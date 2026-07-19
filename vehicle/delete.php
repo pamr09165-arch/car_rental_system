@@ -9,40 +9,61 @@ if (!isset($_GET["id"])) {
 
 $id = $_GET["id"];
 
-// ดึงข้อมูลรูปก่อนลบ
-$stmt = $conn->prepare("SELECT image FROM vehicles WHERE id=?");
+/* ==========================
+   ดึงข้อมูลรถ
+========================== */
+
+$stmt = $conn->prepare("
+SELECT image
+FROM vehicles
+WHERE id = ?
+");
+
 $stmt->bind_param("s", $id);
 $stmt->execute();
+
 $result = $stmt->get_result();
 
 if ($result->num_rows == 0) {
+
     header("Location:index.php");
     exit();
+
 }
 
 $row = $result->fetch_assoc();
 
-// ลบไฟล์รูป (ถ้ามี)
-if (!empty($row["image"])) {
+/* ==========================
+   ลบไฟล์รูป
+========================== */
 
-    $path = "../uploads/vehicles/" . $row["image"];
+if (
+    !empty($row["image"]) &&
+    file_exists("../uploads/vehicles/" . $row["image"])
+) {
 
-    if (file_exists($path)) {
-        unlink($path);
-    }
+    unlink("../uploads/vehicles/" . $row["image"]);
 
 }
 
-// ลบข้อมูล
-$stmt = $conn->prepare("DELETE FROM vehicles WHERE id=?");
+/* ==========================
+   ลบข้อมูล
+========================== */
+
+$stmt = $conn->prepare("
+DELETE FROM vehicles
+WHERE id = ?
+");
+
 $stmt->bind_param("s", $id);
 
 if ($stmt->execute()) {
 
     header("Location:index.php?delete=1");
+    exit();
 
 } else {
 
-    echo $stmt->error;
+    echo "เกิดข้อผิดพลาด : " . $stmt->error;
 
 }

@@ -2,64 +2,122 @@
 require_once("../includes/session.php");
 require_once("../config/conn.php");
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if ($_SERVER["REQUEST_METHOD"] != "POST") {
+    header("Location:index.php");
+    exit();
+}
 
-    // รับค่าจากฟอร์ม
-    $brand = trim($_POST["brand"]);
-    $model = trim($_POST["model"]);
-    $year = !empty($_POST["year"]) ? $_POST["year"] : NULL;
-    $plate_no = trim($_POST["plate_no"]);
-    $price_per_day = $_POST["price_per_day"];
-    $deposit_amount = $_POST["deposit_amount"];
-    $location = trim($_POST["location"]);
-    $status = $_POST["status"];
-
-    // owner_id ใช้ user ที่ Login อยู่
-    $owner_id = $_SESSION["user_id"];
-
-    // ตรวจสอบทะเบียนรถซ้ำ
-    $check = $conn->prepare("SELECT id FROM vehicles WHERE plate_no = ?");
-    $check->bind_param("s", $plate_no);
-    $check->execute();
-    $result = $check->get_result();
-
-    if ($result->num_rows > 0) {
-        echo "<script>
-                alert('ทะเบียนรถนี้มีอยู่ในระบบแล้ว');
-                window.history.back();
-              </script>";
-        exit();
-    }
-
-    // เพิ่มข้อมูล
-    $sql = "INSERT INTO vehicles
-            (owner_id, brand, model, year, plate_no, price_per_day, deposit_amount, location, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-    $stmt = $conn->prepare($sql);
-
-    $stmt->bind_param(
-        "sssssddss",
-        $owner_id,
-        $brand,
-        $model,
-        $year,
-        $plate_no,
-        $price_per_day,
-        $deposit_amount,
-        $location,
-        $status
+// ---------- Generate UUID ----------
+function generateUUID()
+{
+    return sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff)
     );
+}
 
-    if ($stmt->execute()) {
+$id = generateUUID();
 
-        header("Location: index.php?success=1");
-        exit();
+// Admin ที่ Login อยู่ (ภายหลังจะเปลี่ยนเป็น Owner จริง)
+$owner_id = $_SESSION["user_id"];
 
-    } else {
+// ---------- รับค่าจากฟอร์ม ----------
+$brand = trim($_POST["brand"]);
+$model = trim($_POST["model"]);
+$year = !empty($_POST["year"]) ? $_POST["year"] : NULL;
+$plate_no = trim($_POST["plate_no"]);
+$price_per_day = $_POST["price_per_day"];
+$deposit_amount = !empty($_POST["deposit_amount"]) ? $_POST["deposit_amount"] : 0;
+$location = trim($_POST["location"]);
+$status = $_POST["status"];
 
-        echo "เกิดข้อผิดพลาด : " . $stmt->error;
+// ---------- Upload Image ----------
+$imageName = NULL;
 
+if (isset($_FILES["image"]) && $_FILES["image"]["error"] == 0) {
+
+    $allowed = ["jpg", "jpeg", "png", "webp"];
+
+    $extension = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
+
+    if (!in_array($extension, $allowed)) {
+        die("อนุญาตเฉพาะไฟล์ JPG, PNG และ WEBP");
     }
+
+    if ($_FILES["image"]["size"] > 5 * 1024 * 1024) {
+        die("ไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+    }
+
+    $imageName = uniqid("car_", true) . "." . $extension;
+
+    $uploadPath = "../uploads/vehicles/" . $imageName;
+
+    if (!move_uploaded_file($_FILES["image"]["tmp_name"], $uploadPath)) {
+        die("อัปโหลดรูปไม่สำเร็จ");
+    }
+}
+
+// ---------- INSERT ----------
+$sql = "INSERT INTO vehicles
+(
+id,
+owner_id,
+brand,
+model,
+year,
+plate_no,
+price_per_day,
+deposit_amount,
+location,
+image,
+status
+)
+VALUES
+(
+?,
+?,
+?,
+?,
+?,
+?,
+?,
+?,
+?,
+?,
+?
+)";
+
+$stmt = $conn->prepare($sql);
+
+$stmt->bind_param(
+    "ssssisdssss",
+    $id,
+    $owner_id,
+    $brand,
+    $model,
+    $year,
+    $plate_no,
+    $price_per_day,
+    $deposit_amount,
+    $location,
+    $imageName,
+    $status
+);
+
+if ($stmt->execute()) {
+
+    header("Location:index.php?success=1");
+    exit();
+
+} else {
+
+    echo "Error : " . $stmt->error;
 
 }
