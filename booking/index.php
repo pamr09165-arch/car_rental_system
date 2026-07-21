@@ -1,0 +1,328 @@
+<?php
+require_once("../includes/session.php");
+require_once("../config/conn.php");
+
+$sql = "SELECT
+            b.id,
+            c.full_name,
+            v.brand,
+            v.model,
+            v.plate_no,
+            b.start_date,
+            b.end_date,
+            b.total_price,
+            b.status
+        FROM bookings b
+        INNER JOIN customers c
+            ON b.renter_id = c.id
+        INNER JOIN vehicles v
+            ON b.vehicle_id = v.id
+        ORDER BY b.created_at DESC";
+
+$result = $conn->query($sql);
+
+include("../includes/header.php");
+include("../includes/navbar.php");
+?>
+
+<div class="d-flex">
+<?php if(isset($_GET["return"])) { ?>
+
+<div class="alert alert-success alert-dismissible fade show">
+
+<i class="bi bi-check-circle-fill"></i>
+
+คืนรถเรียบร้อยแล้ว
+
+<button
+type="button"
+class="btn-close"
+data-bs-dismiss="alert"></button>
+
+</div>
+
+<?php } ?>
+<?php include("../includes/sidebar.php"); ?>
+
+<div class="container-fluid p-4">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+
+    <h2>
+        <i class="bi bi-calendar-check"></i>
+        Booking Management
+    </h2>
+
+    <a href="create.php" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i>
+        เพิ่มการจอง
+    </a>
+
+</div>
+
+<hr>
+
+<?php if(isset($_GET["success"])) { ?>
+
+<div class="alert alert-success alert-dismissible fade show">
+
+บันทึกข้อมูลเรียบร้อย
+
+<button
+type="button"
+class="btn-close"
+data-bs-dismiss="alert"></button>
+
+</div>
+
+<?php } ?>
+
+<?php if(isset($_GET["update"])) { ?>
+
+<div class="alert alert-warning alert-dismissible fade show">
+
+แก้ไขข้อมูลเรียบร้อย
+
+<button
+type="button"
+class="btn-close"
+data-bs-dismiss="alert"></button>
+
+</div>
+
+<?php } ?>
+
+<?php if(isset($_GET["delete"])) { ?>
+
+<div class="alert alert-danger alert-dismissible fade show">
+
+ลบข้อมูลเรียบร้อย
+
+<button
+type="button"
+class="btn-close"
+data-bs-dismiss="alert"></button>
+
+</div>
+<?php if(isset($_GET["return"])) { ?>
+
+<div class="alert alert-success alert-dismissible fade show">
+
+<i class="bi bi-check-circle-fill"></i>
+
+คืนรถเรียบร้อยแล้ว
+
+<button
+type="button"
+class="btn-close"
+data-bs-dismiss="alert"></button>
+
+</div>
+
+<?php } ?>
+<?php } ?>
+
+<div class="table-responsive">
+
+<table
+id="bookingTable"
+class="table table-bordered table-hover align-middle">
+
+<thead class="table-dark">
+
+<tr>
+
+<th width="60">#</th>
+
+<th>ลูกค้า</th>
+
+<th>รถ</th>
+
+<th>ทะเบียน</th>
+
+<th>วันรับรถ</th>
+
+<th>วันคืนรถ</th>
+
+<th>ค่าเช่า</th>
+
+<th>สถานะ</th>
+
+<th width="180">จัดการ</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<?php
+
+$no = 1;
+
+while($row = $result->fetch_assoc()){
+
+?>
+
+<tr>
+
+<td><?= $no++ ?></td>
+
+<td>
+
+<?= htmlspecialchars($row["full_name"]) ?>
+
+</td>
+
+<td>
+
+<?= htmlspecialchars($row["brand"]) ?>
+
+<?= htmlspecialchars($row["model"]) ?>
+
+</td>
+
+<td>
+
+<?= htmlspecialchars($row["plate_no"]) ?>
+
+</td>
+
+<td>
+
+<?= date("d/m/Y",strtotime($row["start_date"])) ?>
+
+</td>
+
+<td>
+
+<?= date("d/m/Y",strtotime($row["end_date"])) ?>
+
+</td>
+
+<td>
+
+<?= number_format($row["total_price"],2) ?>
+
+บาท
+
+</td>
+
+<td>
+
+<?php
+
+$status=$row["status"];
+
+if($status=="pending"){
+
+echo '<span class="badge bg-warning">Pending</span>';
+
+}elseif($status=="confirmed"){
+
+echo '<span class="badge bg-primary">Confirmed</span>';
+
+}elseif($status=="completed"){
+
+echo '<span class="badge bg-success">Completed</span>';
+
+}else{
+
+echo '<span class="badge bg-danger">Cancelled</span>';
+
+}
+
+?>
+
+</td>
+
+<td>
+
+<a
+href="edit.php?id=<?= $row["id"] ?>"
+class="btn btn-warning btn-sm">
+
+<i class="bi bi-pencil-square"></i>
+
+</a>
+
+<a
+href="return.php?id=<?= $row["id"] ?>"
+class="btn btn-success btn-sm">
+
+<i class="bi bi-arrow-return-left"></i>
+
+</a>
+
+<a
+href="#"
+onclick="confirmDelete('<?= $row['id'] ?>')"
+class="btn btn-danger btn-sm">
+
+<i class="bi bi-trash"></i>
+
+</a>
+
+</td>
+
+</tr>
+
+<?php } ?>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+$(document).ready(function(){
+
+$('#bookingTable').DataTable({
+
+language:{
+
+url:"//cdn.datatables.net/plug-ins/1.13.7/i18n/th.json"
+
+}
+
+});
+
+});
+
+function confirmDelete(id){
+
+Swal.fire({
+
+title:'ยืนยันการลบ',
+
+text:'คุณต้องการลบรายการนี้ใช่หรือไม่?',
+
+icon:'warning',
+
+showCancelButton:true,
+
+confirmButtonText:'ลบ',
+
+cancelButtonText:'ยกเลิก'
+
+}).then((result)=>{
+
+if(result.isConfirmed){
+
+window.location='delete.php?id='+id;
+
+}
+
+});
+
+}
+
+</script>
+
+<?php include("../includes/footer.php"); ?>
